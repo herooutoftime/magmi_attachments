@@ -1,0 +1,2 @@
+magmi/conf/AttachmentsProcessor.conf                magmi_new/conf/AttachmentsProcessor.conf
+magmi/plugins/subs/itemprocessors/attachments       magmi_new/plugins/subs/itemprocessors/attachments
