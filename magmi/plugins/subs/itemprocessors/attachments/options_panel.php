@@ -38,7 +38,7 @@
 			<option value="">None</option>
 		</select>
 	</li>
-	<li class="fieldinfo">Either MOVE or COPY original files to destination</li>
+	<li class="fieldinfo">Choose how to organize your files</li>
 </ul>
 
 <ul class="formline">
@@ -61,4 +61,22 @@
 		</select>
 	</li>
 	<li class="fieldinfo">Either MOVE or COPY original files to destination</li>
+</ul>
+
+<ul class="formline">
+	<li class="label">Attachments File Exclusion</li>
+	<li class="value">
+		<input type="text" name="ATTACH:file_exclusion"
+		       value="<?php echo $this->getParam("ATTACH:file_exclusion", "jpg,png,gif")?>"></input>
+	</li>
+	<li class="fieldinfo">Which files to exclude from attachment import</li>
+</ul>
+
+<ul class="formline">
+	<li class="label">Attachments File Inclusion</li>
+	<li class="value">
+		<input type="text" name="ATTACH:file_inclusion"
+		       value="<?php echo $this->getParam("ATTACH:file_inclusion", "doc,docx,pdf,xls,xlsx")?>"></input>
+	</li>
+	<li class="fieldinfo">Which files to include from attachment import</li>
 </ul>

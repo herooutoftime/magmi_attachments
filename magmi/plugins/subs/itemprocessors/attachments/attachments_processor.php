@@ -31,6 +31,8 @@ class AttachmentsProcessor extends Magmi_ItemProcessor
 			'att_dest_dir' => $this->getParam('ATTACH:destination_dir', 'custom/attachments/'),
 			'att_dest_org' => $this->getParam('ATTACH:destination_org', 'sku'),
 			'att_file_op' => $this->getParam('ATTACH:file_operation', 'copy'),
+			'att_file_exclude' => $this->getParam('ATTACH:file_exclusion', 'jpg,png,gif'),
+			'att_file_include' => $this->getParam('ATTACH:file_inclusion', 'doc,docx,pdf,xls,xlsx'),
 		);
 		$attachments = json_decode($item[$this->_settings['att_col']]);
 
@@ -46,7 +48,20 @@ class AttachmentsProcessor extends Magmi_ItemProcessor
 		);
 		$sql = "INSERT INTO {$this->_settings['att_tbl']} (" . implode(', ', $cols) . ") VALUES(:" . implode(',:', $cols) . ")";
 		foreach ($attachments as $index => $attachment) {
-			$file_dest_path = $this->prepareFilepath($this->_item, $attachment);
+			$file_dest_path = $this->prepareFilepath(/*$this->_item, */$attachment);
+			$att_id = $this->get($file_dest_path);
+			// Do nothing if this attachment already exists!
+			/**
+			 * @todo
+			 * Handle updates better:
+			 * * Set property `mode` for _item to `update`
+			 * * Prevent INSERT
+			 * * BUT check if file was modified => timestamp
+			 * * Update file
+			 */
+			if($att_id)
+				continue;
+
 			$data = array(
 				'title' => $attachment->title,
 				'uploaded_file' => $file_dest_path,
@@ -61,14 +76,25 @@ class AttachmentsProcessor extends Magmi_ItemProcessor
 
 			} else {
 				var_dump($data);
-//				var_dump($this->insert($sql, $data));
+				var_dump($this->insert($sql, $data));
 			}
 		}
 		return true;
 	}
 
-	public function prepareFilepath($product, $attachment)
+	public function get($file_path)
 	{
+		$product = $this->_item;
+		$sql = "SELECT fileuploader_id FROM {$this->_settings['att_tbl']} WHERE uploaded_file = '$file_path' AND FIND_IN_SET('{$this->_item['product_id']}', CAST(product_ids as char)) > 0";
+		$result = $this->testexists($sql, null, 'fileuploader_id');
+		if($result)
+			return $this->selectone($sql, null, 'fileuploader_id');
+		return false;
+	}
+
+	public function prepareFilepath(/*$product, */$attachment)
+	{
+		$product = $this->_item;
 		$organisation = $this->_settings['att_dest_org'];
 		$fi = pathinfo($attachment->file);
 		if(empty($organisation) || !$organisation || $organisation == '')
@@ -97,6 +123,7 @@ class AttachmentsProcessor extends Magmi_ItemProcessor
 
 		$src_abs = false;
 		$fi = pathinfo($file_path);
+		var_dump($fi);
 		$dest_dir = $this->slashes('media' . self::DS . $fi['dirname']);
 		$this->_dirhandler->mkdir($dest_dir, Magmi_Config::getInstance()->getDirMask(), true);
 
@@ -107,9 +134,10 @@ class AttachmentsProcessor extends Magmi_ItemProcessor
 		}
 		$src_path = $this->slashes($root . self::DS . $attachment->file);
 		$dest_path = $this->slashes('media' . self::DS . $file_dest_path);
-		if($this->_settings['att_file_op'] === 'copy')
+
+		if($this->_settings['att_file_op'] == 'copy')
 			$result = $this->_dirhandler->copy($src_path, $dest_path);
-		if($this->_settings['att_file_op'] === 'move') {
+		if($this->_settings['att_file_op'] == 'move') {
 			$result['copy'] = $this->_dirhandler->copy($src_path, $dest_path);
 			$result['unlink'] = $this->_dirhandler->unlink($src_path);
 		}
